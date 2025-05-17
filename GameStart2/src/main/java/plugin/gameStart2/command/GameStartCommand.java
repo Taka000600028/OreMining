@@ -1,5 +1,6 @@
 package plugin.gameStart2.command;
 
+import java.util.List;
 import java.util.SplittableRandom;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -24,6 +25,7 @@ public class GameStartCommand implements CommandExecutor {
       player.getWorld();
 
       //　プレイヤーの状態を初期化する。
+      player.getHealth();
       PlayerInventory inventory = player.getInventory();
       ItemStack helmet = inventory.getHelmet();
       ItemStack chestPlate = inventory.getChestplate();
@@ -32,16 +34,21 @@ public class GameStartCommand implements CommandExecutor {
       ItemStack itemInMainHand = inventory.getItemInMainHand();
 
       //コマンドを実行の間、装備する。
+      player.setHealth(20);
       inventory.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
       inventory.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
       inventory.setLeggings(new ItemStack(Material.NETHERITE_LEGGINGS));
       inventory.setBoots(new ItemStack(Material.NETHERITE_BOOTS));
       inventory.setItemInMainHand(new ItemStack(Material.NETHERITE_PICKAXE));
 
+      List<Material> BlockList = List.of(Material.DIAMOND_ORE, Material.LAPIS_ORE,
+          Material.EMERALD_ORE, Material.GOLD_ORE);
+      int random = new SplittableRandom().nextInt(4);
       world.spawnFallingBlock(getBlockSpawnLocation1(player, world),
-          Material.EMERALD_ORE.createBlockData());
+          BlockList.get(random).createBlockData());
 
 //      ゲーム終了　(ゲーム時間を設定後、実装する。)
+//      player.getHealth();
 //      inventory.setHelmet(helmet);
 //      inventory.setChestPlate(chestPlate);
 //      inventory.setLeggings(leggings);
@@ -49,16 +56,15 @@ public class GameStartCommand implements CommandExecutor {
 //      inventory.setItemInMainHand(itemInMainHand);
 
     }
-      return false;
-    }
+    return false;
+  }
 
   /**
-   * Blockの出現エリアを取得します。
-   * 出現エリアはX、Z軸は指定した場所-1から4の値が設定されます。
-   * Y軸は指定した場所の1から4の値が設定されます。
-   * @param player　プレイヤー
-   * @param world　プレイヤーが所属するワールド
-   * @return  ブロックの出現場所
+   * Blockの出現エリアを取得します。 出現エリアはX、Z軸は指定した場所-1から4の値が設定されます。 Y軸は指定した場所の1から4の値が設定されます。
+   *
+   * @param player 　プレイヤー
+   * @param world  　プレイヤーが所属するワールド
+   * @return ブロックの出現場所
    */
   private Location getBlockSpawnLocation1(Player player, World world) {
     Location playerLocation = player.getLocation();
