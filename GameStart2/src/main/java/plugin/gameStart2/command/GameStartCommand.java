@@ -10,12 +10,14 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
 public class GameStartCommand implements CommandExecutor {
 
   World world;
+  int count;
 
   @Override
   public boolean onCommand(CommandSender commandSender, Command command, String s,
@@ -26,6 +28,7 @@ public class GameStartCommand implements CommandExecutor {
 
       //　プレイヤーの状態を初期化する。
       player.getHealth();
+      player.getFoodLevel();
       PlayerInventory inventory = player.getInventory();
       ItemStack helmet = inventory.getHelmet();
       ItemStack chestPlate = inventory.getChestplate();
@@ -35,17 +38,21 @@ public class GameStartCommand implements CommandExecutor {
 
       //コマンドを実行の間、装備する。
       player.setHealth(20);
+      player.setFoodLevel(20);
       inventory.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
       inventory.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
       inventory.setLeggings(new ItemStack(Material.NETHERITE_LEGGINGS));
       inventory.setBoots(new ItemStack(Material.NETHERITE_BOOTS));
       inventory.setItemInMainHand(new ItemStack(Material.NETHERITE_PICKAXE));
 
-      List<Material> BlockList = List.of(Material.DIAMOND_ORE, Material.LAPIS_ORE,
-          Material.EMERALD_ORE, Material.GOLD_ORE);
-      int random = new SplittableRandom().nextInt(4);
-      world.spawnFallingBlock(getBlockSpawnLocation1(player, world),
-          BlockList.get(random).createBlockData());
+      if (count % 20 == 0) {
+        for (int i = 0; i < 21; i++) {
+
+          List<Material> BlockList = List.of(Material.DIAMOND_ORE, Material.LAPIS_ORE,
+              Material.EMERALD_ORE, Material.GOLD_ORE);
+          int random = new SplittableRandom().nextInt(4);
+          world.spawnFallingBlock(getBlockSpawnLocation1(player, world),
+              BlockList.get(random).createBlockData());
 
 //      ゲーム終了　(ゲーム時間を設定後、実装する。)
 //      player.getHealth();
@@ -54,7 +61,8 @@ public class GameStartCommand implements CommandExecutor {
 //      inventory.setLeggings(leggings);
 //      inventory.setBoots(boots);
 //      inventory.setItemInMainHand(itemInMainHand);
-
+        }
+      }
     }
     return false;
   }
