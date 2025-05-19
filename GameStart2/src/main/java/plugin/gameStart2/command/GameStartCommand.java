@@ -53,6 +53,20 @@ public class GameStartCommand implements CommandExecutor {
           int random = new SplittableRandom().nextInt(4);
           world.spawnFallingBlock(getBlockSpawnLocation1(player, world),
               BlockList.get(random).createBlockData());
+        }
+      }
+
+      if (count % 20 == 0) {
+        for (int i = 0; i < 21; i++) {
+
+          List<Material> BlockList = List.of(Material.DIAMOND_ORE, Material.LAPIS_ORE,
+              Material.EMERALD_ORE, Material.GOLD_ORE);
+          int random = new SplittableRandom().nextInt(4);
+          world.spawnFallingBlock(getBlockSpawnLocation2(player, world),
+              BlockList.get(random).createBlockData());
+        }
+      }
+
 
 //      ゲーム終了　(ゲーム時間を設定後、実装する。)
 //      player.getHealth();
@@ -61,14 +75,13 @@ public class GameStartCommand implements CommandExecutor {
 //      inventory.setLeggings(leggings);
 //      inventory.setBoots(boots);
 //      inventory.setItemInMainHand(itemInMainHand);
-        }
-      }
+
     }
     return false;
   }
 
   /**
-   * Blockの出現エリアを取得します。 出現エリアはX、Z軸は指定した場所-1から4の値が設定されます。 Y軸は指定した場所の1から4の値が設定されます。
+   * Blockの出現エリア1を取得します。 出現エリアはX、Z軸は指定した場所-1から4の値が設定されます。 Y軸は指定した場所の1から4の値が設定されます。
    *
    * @param player 　プレイヤー
    * @param world  　プレイヤーが所属するワールド
@@ -82,6 +95,23 @@ public class GameStartCommand implements CommandExecutor {
     int randomZ = new SplittableRandom().nextInt(6) - 1;
     return new Location
         (world, 168 + randomX, 63 + randomY, -75 + randomZ);
+  }
+
+  /**
+   * Blockの出現エリア2を取得します。 出現エリアはX、Z軸は指定した場所-1から4の値が設定されます。 Y軸は指定した場所の1から4の値が設定されます。
+   *
+   * @param player 　プレイヤー
+   * @param world  　プレイヤーが所属するワールド
+   * @return ブロックの出現場所
+   */
+  private Location getBlockSpawnLocation2(Player player, World world) {
+    Location playerLocation = player.getLocation();
+    //random１はX,Z軸に使用する。random2はY軸に使用する。
+    int randomX = new SplittableRandom().nextInt(6) - 1;
+    int randomY = new SplittableRandom().nextInt(3) + 1;
+    int randomZ = new SplittableRandom().nextInt(6) - 1;
+    return new Location
+        (world, 140 + randomX, 58 + randomY, -49 + randomZ);
   }
 
 }
