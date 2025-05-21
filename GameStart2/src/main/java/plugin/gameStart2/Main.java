@@ -7,12 +7,13 @@ import org.bukkit.event.inventory.InventoryPickupItemEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import plugin.gameStart2.command.GameStartCommand;
 
-public final class Main extends JavaPlugin implements Listener {
+public final class Main extends JavaPlugin{
 
+  GameStartCommand gameStartCommand = new GameStartCommand();
   @Override
   public void onEnable() {
-    Bukkit.getPluginManager().registerEvents(this, this);
-    getCommand("gameStart").setExecutor(new GameStartCommand());
+    Bukkit.getPluginManager().registerEvents(gameStartCommand, this);
+    getCommand("gameStart").setExecutor(gameStartCommand);
   }
 
 }

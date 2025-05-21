@@ -9,22 +9,27 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
-public class GameStartCommand implements CommandExecutor {
-
+public class GameStartCommand implements CommandExecutor, Listener{
   World world;
   int count;
+  private Player player;
+  private int score;
 
   @Override
   public boolean onCommand(CommandSender commandSender, Command command, String s,
       String[] strings) {
     if (commandSender instanceof Player player) {
       world = player.getWorld();
-      player.getWorld();
+      this.player = player;
 
       //　プレイヤーの状態を初期化する。
       player.getHealth();
@@ -78,6 +83,13 @@ public class GameStartCommand implements CommandExecutor {
 
     }
     return false;
+  }
+
+  @EventHandler
+  public void onGetOre(BlockDropItemEvent e){
+    List<Material> getItems;
+    score += 10;
+    e.getPlayer().sendMessage("鉱石を見つけた！" + score + "点！");
   }
 
   /**
