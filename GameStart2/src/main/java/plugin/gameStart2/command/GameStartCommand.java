@@ -86,7 +86,7 @@ public class GameStartCommand implements CommandExecutor, Listener{
   }
 
   @EventHandler
-  public void onGetOre(BlockDropItemEvent e){
+  public void onGetCursor(BlockDropItemEvent e){
     List<Material> getItems;
     score += 10;
     e.getPlayer().sendMessage("鉱石を見つけた！" + score + "点！");
