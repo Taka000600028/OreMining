@@ -2,27 +2,33 @@ package plugin.gameStart2.command;
 
 import java.util.List;
 import java.util.SplittableRandom;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockDropItemEvent;
-import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import plugin.gameStart2.Main;
 
-public class GameStartCommand implements CommandExecutor, Listener{
+public class GameStartCommand implements CommandExecutor, Listener {
+
   World world;
   int count;
   private Player player;
   private int score;
+  private Main main;
+  private int gameTime = 20;
+
+  public GameStartCommand(Main main) {
+    this.main = main;
+  }
 
   @Override
   public boolean onCommand(CommandSender commandSender, Command command, String s,
@@ -30,6 +36,8 @@ public class GameStartCommand implements CommandExecutor, Listener{
     if (commandSender instanceof Player player) {
       world = player.getWorld();
       this.player = player;
+      gameTime = 20;
+      score = 0;
 
       //　プレイヤーの状態を初期化する。
       player.getHealth();
@@ -50,28 +58,34 @@ public class GameStartCommand implements CommandExecutor, Listener{
       inventory.setBoots(new ItemStack(Material.NETHERITE_BOOTS));
       inventory.setItemInMainHand(new ItemStack(Material.NETHERITE_PICKAXE));
 
-      if (count % 20 == 0) {
-        for (int i = 0; i < 21; i++) {
-
-          List<Material> BlockList = List.of(Material.DIAMOND_ORE, Material.LAPIS_ORE,
-              Material.EMERALD_ORE, Material.GOLD_ORE);
-          int random = new SplittableRandom().nextInt(4);
-          world.spawnFallingBlock(getBlockSpawnLocation1(player, world),
-              BlockList.get(random).createBlockData());
+      Bukkit.getScheduler().runTaskTimer(main, Runnable -> {
+        if (gameTime <= 0) {
+          Runnable.cancel();
+          player.sendTitle("ゲームが終了しました！",player.getName()+"のスコアは" + score + "点",30,30,30);
+          return;
         }
-      }
 
-      if (count % 20 == 0) {
-        for (int i = 0; i < 21; i++) {
+        if (count % 20 == 0) {
+          for (int i = 0; i < 21; i++) {
 
-          List<Material> BlockList = List.of(Material.DIAMOND_ORE, Material.LAPIS_ORE,
-              Material.EMERALD_ORE, Material.GOLD_ORE);
-          int random = new SplittableRandom().nextInt(4);
-          world.spawnFallingBlock(getBlockSpawnLocation2(player, world),
-              BlockList.get(random).createBlockData());
+            List<Material> BlockList = List.of(Material.DIAMOND_ORE, Material.LAPIS_ORE,
+                Material.EMERALD_ORE, Material.GOLD_ORE);
+            int random = new SplittableRandom().nextInt(4);
+            world.spawnFallingBlock(getBlockSpawnLocation1(player, world),
+                BlockList.get(random).createBlockData());
+          }
         }
-      }
 
+        if (count % 20 == 0) {
+          for (int i = 0; i < 21; i++) {
+
+            List<Material> BlockList = List.of(Material.DIAMOND_ORE, Material.LAPIS_ORE,
+                Material.EMERALD_ORE, Material.GOLD_ORE);
+            int random = new SplittableRandom().nextInt(4);
+            world.spawnFallingBlock(getBlockSpawnLocation2(player, world),
+                BlockList.get(random).createBlockData());
+          }
+        }
 
 //      ゲーム終了　(ゲーム時間を設定後、実装する。)
 //      player.getHealth();
@@ -81,12 +95,14 @@ public class GameStartCommand implements CommandExecutor, Listener{
 //      inventory.setBoots(boots);
 //      inventory.setItemInMainHand(itemInMainHand);
 
+        gameTime -= 20;
+      }, 0, 20 * 20);
     }
     return false;
   }
 
   @EventHandler
-  public void onGetCursor(BlockDropItemEvent e){
+  public void onGetCursor(BlockDropItemEvent e) {
     List<Material> getItems;
     score += 10;
     e.getPlayer().sendMessage("鉱石を見つけた！" + score + "点！");
