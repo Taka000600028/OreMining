@@ -1,0 +1,7 @@
+name: Main
+version: '1.0-SNAPSHOT'
+main: plugin.gameStart.Main
+api-version: '1.21'
+commands:
+  gameStart:
+    usage: /gamestart
