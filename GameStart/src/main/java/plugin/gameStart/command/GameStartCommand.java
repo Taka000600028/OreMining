@@ -23,7 +23,7 @@ public class GameStartCommand implements CommandExecutor, Listener {
   World world;
   private Player player;
   private Main main;
-  private int gameTime = 60;
+  private int gameTime = 50;
   private final HashMap<UUID, Integer> playerScores = new HashMap<>();
 
   public GameStartCommand(Main main) {
@@ -36,7 +36,7 @@ public class GameStartCommand implements CommandExecutor, Listener {
     if (commandSender instanceof Player player) {
       world = player.getWorld();
       this.player = player;
-      gameTime = 60;
+      gameTime = 50;
       //スコアをリセットする。
       playerScores.put(player.getUniqueId(), 0);
 
@@ -49,6 +49,15 @@ public class GameStartCommand implements CommandExecutor, Listener {
       ItemStack boots = inventory.getBoots();
       ItemStack itemInMainHand = inventory.getItemInMainHand();
 
+      //ゲーム開始前の場所を取得する。
+      Location fromLocation = player.getLocation();
+
+      //ゲーム開始後、指定された場所に移動する。
+      Location teleportLocation = new Location(player.getWorld(), 155, 64, -39);
+      teleportLocation.setYaw(180);
+      player.teleport(teleportLocation);
+      player.sendTitle("ゲームを開始します！", "洞窟内の鉱石を採掘して下さい！", 20, 20, 20);
+
       //コマンドを実行の間、装備する。
       player.setHealth(20);
       inventory.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
@@ -58,7 +67,7 @@ public class GameStartCommand implements CommandExecutor, Listener {
       inventory.setItemInMainHand(new ItemStack(Material.NETHERITE_PICKAXE));
 
       Bukkit.getScheduler().runTaskTimer(main, Runnable -> {
-        if (gameTime <= 0) {
+        if (gameTime <= 15) {
           Runnable.cancel();
 
           clearOreArea1(player.getWorld());
@@ -69,23 +78,31 @@ public class GameStartCommand implements CommandExecutor, Listener {
               player.getName() + "のスコアは" + finalScore + "点",
               30, 30, 30);
 
-          //ゲーム開始前の装備に戻す。
-          player.getHealth();
-          inventory.setHelmet(helmet);
-          inventory.setChestplate(chestPlate);
-          inventory.setLeggings(leggings);
-          inventory.setBoots(boots);
-          inventory.setItemInMainHand(itemInMainHand);
+          if (gameTime <= 7) {
+            player.sendTitle("お疲れ様でした。", "ゲーム開始前の場所に戻ります", 20, 20, 20);
+          }
 
+          if (gameTime <= 0) {
+            player.teleport(fromLocation);
+
+            //ゲーム開始前の装備に戻す。
+            player.getHealth();
+            inventory.setHelmet(helmet);
+            inventory.setChestplate(chestPlate);
+            inventory.setLeggings(leggings);
+            inventory.setBoots(boots);
+            inventory.setItemInMainHand(itemInMainHand);
+
+          }
           return;
         }
-
         spawnOre1(player.getWorld(), player, new SplittableRandom(), 140, 58, -49);
         spawnOre2(player.getWorld(), player, new SplittableRandom(), 168, 63, -75);
 
-        gameTime -= 60;
-      }, 0, 20 * 60);
+        gameTime -= 50;
+      }, 0, 20 * 30);
     }
+
     return false;
   }
 
@@ -113,6 +130,7 @@ public class GameStartCommand implements CommandExecutor, Listener {
       case LAPIS_ORE -> 5;
       case EMERALD_ORE -> 20;
       case GOLD_ORE -> 30;
+      case NETHER_GOLD_ORE -> 100;
       default -> 0;
     };
   }
@@ -125,13 +143,15 @@ public class GameStartCommand implements CommandExecutor, Listener {
    */
   private static Material getMaterial(int chance) {
     Material oreType = null;
-    if (chance < 10) {
-      return Material.GOLD_ORE;
+    if (chance < 1) {
+      return Material.NETHER_GOLD_ORE;
     } else if (chance < 20) {
-      return Material.DIAMOND_ORE;
+      return Material.GOLD_ORE;
     } else if (chance < 30) {
-      return Material.EMERALD_ORE;
+      return Material.DIAMOND_ORE;
     } else if (chance < 40) {
+      return Material.EMERALD_ORE;
+    } else if (chance < 80) {
       return Material.LAPIS_ORE;
     } else {
       return Material.STONE;
