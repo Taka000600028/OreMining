@@ -7,8 +7,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -18,12 +16,12 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import plugin.gameStart.Main;
 
-public class GameStartCommand implements CommandExecutor, Listener {
+public class GameStartCommand extends BaseCommand implements Listener {
 
   World world;
   private Player player;
   private Main main;
-  private int gameTime = 50;
+  private int gameTime = 40;
   private final HashMap<UUID, Integer> playerScores = new HashMap<>();
 
   public GameStartCommand(Main main) {
@@ -31,81 +29,68 @@ public class GameStartCommand implements CommandExecutor, Listener {
   }
 
   @Override
-  public boolean onCommand(CommandSender commandSender, Command command, String s,
-      String[] strings) {
-    if (commandSender instanceof Player player) {
-      world = player.getWorld();
-      this.player = player;
-      gameTime = 50;
-      //スコアをリセットする。
-      playerScores.put(player.getUniqueId(), 0);
+  public boolean onExecutePlayerCommand(Player player) {
+    world = player.getWorld();
+    this.player = player;
+    gameTime = 40;
+    //スコアをリセットする。
+    playerScores.put(player.getUniqueId(), 0);
 
-      //　ゲーム開始前の装備を記録しておく。
-      player.getHealth();
-      PlayerInventory inventory = player.getInventory();
-      ItemStack helmet = inventory.getHelmet();
-      ItemStack chestPlate = inventory.getChestplate();
-      ItemStack leggings = inventory.getLeggings();
-      ItemStack boots = inventory.getBoots();
-      ItemStack itemInMainHand = inventory.getItemInMainHand();
+    //　ゲーム開始前の装備を記録しておく。
+    PlayerInventory inventory = player.getInventory();
+    ItemStack helmet = inventory.getHelmet();
+    ItemStack chestPlate = inventory.getChestplate();
+    ItemStack leggings = inventory.getLeggings();
+    ItemStack boots = inventory.getBoots();
+    ItemStack itemInMainHand = inventory.getItemInMainHand();
 
-      //ゲーム開始前の場所を取得する。
-      Location fromLocation = player.getLocation();
+    //ゲーム開始後、指定された場所に移動する。
+    Location teleportLocation = new Location(player.getWorld(), 155, 64, -39);
+    teleportLocation.setYaw(180);
+    player.teleport(teleportLocation);
+    player.sendTitle("ゲームを開始します！", "洞窟内の鉱石を採掘して下さい！", 20, 20, 20);
 
-      //ゲーム開始後、指定された場所に移動する。
-      Location teleportLocation = new Location(player.getWorld(), 155, 64, -39);
-      teleportLocation.setYaw(180);
-      player.teleport(teleportLocation);
-      player.sendTitle("ゲームを開始します！", "洞窟内の鉱石を採掘して下さい！", 20, 20, 20);
+    //コマンドを実行の間、装備する。
+    inventory.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
+    inventory.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
+    inventory.setLeggings(new ItemStack(Material.NETHERITE_LEGGINGS));
+    inventory.setBoots(new ItemStack(Material.NETHERITE_BOOTS));
+    inventory.setItemInMainHand(new ItemStack(Material.NETHERITE_PICKAXE));
 
-      //コマンドを実行の間、装備する。
-      player.setHealth(20);
-      inventory.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
-      inventory.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
-      inventory.setLeggings(new ItemStack(Material.NETHERITE_LEGGINGS));
-      inventory.setBoots(new ItemStack(Material.NETHERITE_BOOTS));
-      inventory.setItemInMainHand(new ItemStack(Material.NETHERITE_PICKAXE));
+    Bukkit.getScheduler().runTaskTimer(main, Runnable -> {
+      if (gameTime <= 0) {
+        Runnable.cancel();
 
-      Bukkit.getScheduler().runTaskTimer(main, Runnable -> {
-        if (gameTime <= 15) {
-          Runnable.cancel();
+        clearOreArea1(player.getWorld());
+        clearOreArea2(player.getWorld());
 
-          clearOreArea1(player.getWorld());
-          clearOreArea2(player.getWorld());
+        int finalScore = playerScores.getOrDefault(player.getUniqueId(), 0);
+        player.sendTitle("ゲームが終了しました！",
+            player.getName() + "のスコアは" + finalScore + "点！",
+            30, 30, 30);
 
-          int finalScore = playerScores.getOrDefault(player.getUniqueId(), 0);
-          player.sendTitle("ゲームが終了しました！",
-              player.getName() + "のスコアは" + finalScore + "点",
-              30, 30, 30);
+        //ゲーム開始前の装備に戻す。
+        inventory.setHelmet(helmet);
+        inventory.setChestplate(chestPlate);
+        inventory.setLeggings(leggings);
+        inventory.setBoots(boots);
+        inventory.setItemInMainHand(itemInMainHand);
 
-          if (gameTime <= 7) {
-            player.sendTitle("お疲れ様でした。", "ゲーム開始前の場所に戻ります", 20, 20, 20);
-          }
+        return;
+      }
+      spawnOre1(player.getWorld(), player, new SplittableRandom(), 140, 58, -49);
+      spawnOre2(player.getWorld(), player, new SplittableRandom(), 168, 63, -75);
 
-          if (gameTime <= 0) {
-            player.teleport(fromLocation);
+      gameTime -= 40;
+    }, 0, 20 * 40);
 
-            //ゲーム開始前の装備に戻す。
-            player.getHealth();
-            inventory.setHelmet(helmet);
-            inventory.setChestplate(chestPlate);
-            inventory.setLeggings(leggings);
-            inventory.setBoots(boots);
-            inventory.setItemInMainHand(itemInMainHand);
-
-          }
-          return;
-        }
-        spawnOre1(player.getWorld(), player, new SplittableRandom(), 140, 58, -49);
-        spawnOre2(player.getWorld(), player, new SplittableRandom(), 168, 63, -75);
-
-        gameTime -= 50;
-      }, 0, 20 * 30);
-    }
-
-    return false;
+    return true;
   }
 
+  @Override
+  public boolean onExecuteNPCCommand(CommandSender commandSender) {
+    return false;
+  }
 
   @EventHandler
   public void onBlockBreak(BlockBreakEvent e) {
