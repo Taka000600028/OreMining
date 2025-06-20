@@ -14,11 +14,17 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.scheduler.BukkitRunnable;
 import plugin.gameStart.Main;
 
+/**
+ * 制限時間内に出現するブロックを壊して、スコアを獲得するゲームを起動するコマンドです。
+ * スコアはブロックの種類によって変わり、合計点数が変動します。
+ * 結果はプレイヤー名、点数、日時などで保存されます。
+ **/
 public class GameStartCommand extends BaseCommand implements Listener {
 
-  World world;
+  public static final int GAME_TIME = 40;
   private Player player;
   private Main main;
   private int gameTime = 40;
@@ -30,11 +36,10 @@ public class GameStartCommand extends BaseCommand implements Listener {
 
   @Override
   public boolean onExecutePlayerCommand(Player player) {
-    world = player.getWorld();
     this.player = player;
-    gameTime = 40;
-    //スコアをリセットする。
+    gameTime = GAME_TIME;
     playerScores.put(player.getUniqueId(), 0);
+    Main main = this.main;
 
     //　ゲーム開始前の装備を記録しておく。
     PlayerInventory inventory = player.getInventory();
@@ -45,6 +50,8 @@ public class GameStartCommand extends BaseCommand implements Listener {
     ItemStack itemInMainHand = inventory.getItemInMainHand();
 
     //ゲーム開始後、指定された場所に移動する。
+    Location fromLocation = player.getLocation().clone();
+
     Location teleportLocation = new Location(player.getWorld(), 155, 64, -39);
     teleportLocation.setYaw(180);
     player.teleport(teleportLocation);
@@ -57,35 +64,11 @@ public class GameStartCommand extends BaseCommand implements Listener {
     inventory.setBoots(new ItemStack(Material.NETHERITE_BOOTS));
     inventory.setItemInMainHand(new ItemStack(Material.NETHERITE_PICKAXE));
 
-    Bukkit.getScheduler().runTaskTimer(main, Runnable -> {
-      if (gameTime <= 0) {
-        Runnable.cancel();
-
-        clearOreArea1(player.getWorld());
-        clearOreArea2(player.getWorld());
-
-        int finalScore = playerScores.getOrDefault(player.getUniqueId(), 0);
-        player.sendTitle("ゲームが終了しました！",
-            player.getName() + "のスコアは" + finalScore + "点！",
-            30, 30, 30);
-
-        //ゲーム開始前の装備に戻す。
-        inventory.setHelmet(helmet);
-        inventory.setChestplate(chestPlate);
-        inventory.setLeggings(leggings);
-        inventory.setBoots(boots);
-        inventory.setItemInMainHand(itemInMainHand);
-
-        return;
-      }
-      spawnOre1(player.getWorld(), player, new SplittableRandom(), 140, 58, -49);
-      spawnOre2(player.getWorld(), player, new SplittableRandom(), 168, 63, -75);
-
-      gameTime -= 40;
-    }, 0, 20 * 40);
-
+    gamePlay(player, main, fromLocation, inventory, helmet, chestPlate, leggings, boots,
+        itemInMainHand);
     return true;
   }
+
 
   @Override
   public boolean onExecuteNPCCommand(CommandSender commandSender) {
@@ -111,11 +94,11 @@ public class GameStartCommand extends BaseCommand implements Listener {
    */
   private int getOreScore(Material oreType) {
     return switch (oreType) {
-      case DIAMOND_ORE -> 10;
-      case LAPIS_ORE -> 5;
-      case EMERALD_ORE -> 20;
-      case GOLD_ORE -> 30;
       case NETHER_GOLD_ORE -> 100;
+      case GOLD_ORE -> 30;
+      case DIAMOND_ORE -> 10;
+      case EMERALD_ORE -> 20;
+      case LAPIS_ORE -> 5;
       default -> 0;
     };
   }
@@ -195,6 +178,63 @@ public class GameStartCommand extends BaseCommand implements Listener {
         }
       }
     }
+  }
+
+  /**
+   * ゲームを実行します。規定時間内にブロックを壊すとスコアが加算されます。合計スコアを時間経過後に表示します。
+   * 持ち物はゲームを実行すると設定された持ち物に変更されます。
+   *
+   * @param player　コマンドを実行したプレイヤー
+   * @param main　クラス名
+   * @param fromLocation　コマンドを実行する時にいる場所の情報
+   * @param inventory　プレイヤーの持ち物
+   * @param helmet　コマンドを実行する時に装着しているヘルメット
+   * @param chestPlate　コマンドを実行する時に装着しているチェストプレート
+   * @param leggings　コマンドを実行する時に装着しているレギンス
+   * @param boots　コマンドを実行する時に装着しているブーツ
+   * @param itemInMainHand　コマンドを実行する時に装着している武器
+   */
+
+  private void gamePlay(Player player, Main main, Location fromLocation, PlayerInventory inventory,
+      ItemStack helmet, ItemStack chestPlate, ItemStack leggings, ItemStack boots,
+      ItemStack itemInMainHand) {
+    new BukkitRunnable() {
+      int timeLeft = gameTime;
+
+      @Override
+      public void run() {
+        if (timeLeft <= 20) {
+          cancel();
+
+          clearOreArea1(player.getWorld());
+          clearOreArea2(player.getWorld());
+
+          int finalScore = playerScores.getOrDefault(player.getUniqueId(), 0);
+          player.sendTitle("ゲームが終了しました！",
+              player.getName() + "のスコアは" + finalScore + "点！",
+              30, 30, 30);
+
+          Bukkit.getScheduler().runTaskLater(main, () -> {
+            player.teleport(fromLocation);
+
+            //ゲーム開始前の装備に戻す。
+            inventory.setHelmet(helmet);
+            inventory.setChestplate(chestPlate);
+            inventory.setLeggings(leggings);
+            inventory.setBoots(boots);
+            inventory.setItemInMainHand(itemInMainHand);
+
+            player.sendMessage("元の位置に戻りました。");
+          }, 20 * 10);
+
+          return;
+        }
+        spawnOre1(player.getWorld(), player, new SplittableRandom(), 140, 58, -49);
+        spawnOre2(player.getWorld(), player, new SplittableRandom(), 168, 63, -75);
+
+        timeLeft -= 50;
+      }
+    }.runTaskTimer(main, 0, 20 * 50);
   }
 }
 
