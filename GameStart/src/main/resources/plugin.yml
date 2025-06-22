@@ -3,5 +3,8 @@ version: '1.0-SNAPSHOT'
 main: plugin.gameStart.Main
 api-version: '1.21'
 commands:
-  gameStart:
+  gamestart:
     usage: /gamestart
+  list:
+    usage: /list
+    description: スコア一覧を表示します

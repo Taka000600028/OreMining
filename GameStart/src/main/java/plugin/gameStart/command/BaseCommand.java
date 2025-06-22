@@ -15,7 +15,7 @@ public abstract class BaseCommand implements CommandExecutor {
   public boolean onCommand(CommandSender commandSender, Command command, String s,
       String[] strings) {
     if (commandSender instanceof Player player) {
-      return onExecutePlayerCommand(player);
+      return onExecutePlayerCommand(player,commandSender,s,strings);
     } else {
       return onExecuteNPCCommand(commandSender);
     }
@@ -28,6 +28,10 @@ public abstract class BaseCommand implements CommandExecutor {
    * @return 処理の実行有無
    */
   public abstract boolean onExecutePlayerCommand(Player player);
+
+  public abstract boolean onExecutePlayerCommand(Player player, CommandSender commandSender,
+      String s,
+      String[] strings);
 
   /**
    * コマンド実行者がプレイヤー以外だった場合に実行します。

@@ -1,5 +1,12 @@
 package plugin.gameStart.command;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.SplittableRandom;
 import java.util.UUID;
@@ -18,8 +25,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import plugin.gameStart.Main;
 
 /**
- * 制限時間内に出現するブロックを壊して、スコアを獲得するゲームを起動するコマンドです。
- * スコアはブロックの種類によって変わり、合計点数が変動します。
+ * 制限時間内に出現するブロックを壊して、スコアを獲得するゲームを起動するコマンドです。 スコアはブロックの種類によって変わり、合計点数が変動します。
  * 結果はプレイヤー名、点数、日時などで保存されます。
  **/
 public class GameStartCommand extends BaseCommand implements Listener {
@@ -29,6 +35,7 @@ public class GameStartCommand extends BaseCommand implements Listener {
   private Main main;
   private int gameTime = 40;
   private final HashMap<UUID, Integer> playerScores = new HashMap<>();
+  private static final String LIST = "list";
 
   public GameStartCommand(Main main) {
     this.main = main;
@@ -36,6 +43,37 @@ public class GameStartCommand extends BaseCommand implements Listener {
 
   @Override
   public boolean onExecutePlayerCommand(Player player) {
+    return false;
+  }
+
+  @Override
+  public boolean onExecutePlayerCommand(Player player, CommandSender commandSender, String s,
+      String[] strings) {
+    if (strings.length == 1 && LIST.equals(strings[0])) {
+
+      String sql = "select * from player_score;";
+
+      try (Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/spigot_server",
+          "root",
+          "me73-266390j");
+          Statement statement = con.createStatement();
+          ResultSet resultSet = statement.executeQuery("select * from player_score;")) {
+        while (resultSet.next()) {
+          int id = resultSet.getInt("id");
+          String name = resultSet.getString("player_name");
+          int score = resultSet.getInt("score");
+
+          LocalDateTime date = LocalDateTime.parse(resultSet.getString("registered_at"), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+          player.sendMessage(id + "　|　" + name + "　|　" + date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        }
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
+      }
+
+      return false;
+    }
+
     this.player = player;
     gameTime = GAME_TIME;
     playerScores.put(player.getUniqueId(), 0);
@@ -181,18 +219,17 @@ public class GameStartCommand extends BaseCommand implements Listener {
   }
 
   /**
-   * ゲームを実行します。規定時間内にブロックを壊すとスコアが加算されます。合計スコアを時間経過後に表示します。
-   * 持ち物はゲームを実行すると設定された持ち物に変更されます。
+   * ゲームを実行します。規定時間内にブロックを壊すとスコアが加算されます。合計スコアを時間経過後に表示します。 持ち物はゲームを実行すると設定された持ち物に変更されます。
    *
-   * @param player　コマンドを実行したプレイヤー
-   * @param main　クラス名
-   * @param fromLocation　コマンドを実行する時にいる場所の情報
-   * @param inventory　プレイヤーの持ち物
-   * @param helmet　コマンドを実行する時に装着しているヘルメット
-   * @param chestPlate　コマンドを実行する時に装着しているチェストプレート
-   * @param leggings　コマンドを実行する時に装着しているレギンス
-   * @param boots　コマンドを実行する時に装着しているブーツ
-   * @param itemInMainHand　コマンドを実行する時に装着している武器
+   * @param player         　コマンドを実行したプレイヤー
+   * @param main           　クラス名
+   * @param fromLocation   　コマンドを実行する時にいる場所の情報
+   * @param inventory      　プレイヤーの持ち物
+   * @param helmet         　コマンドを実行する時に装着しているヘルメット
+   * @param chestPlate     　コマンドを実行する時に装着しているチェストプレート
+   * @param leggings       　コマンドを実行する時に装着しているレギンス
+   * @param boots          　コマンドを実行する時に装着しているブーツ
+   * @param itemInMainHand 　コマンドを実行する時に装着している武器
    */
 
   private void gamePlay(Player player, Main main, Location fromLocation, PlayerInventory inventory,

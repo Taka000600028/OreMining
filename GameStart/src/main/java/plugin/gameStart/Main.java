@@ -10,6 +10,6 @@ public final class Main extends JavaPlugin{
   public void onEnable() {
     GameStartCommand gameStartCommand = new GameStartCommand(this);
     Bukkit.getPluginManager().registerEvents(gameStartCommand, this);
-    getCommand("gameStart").setExecutor(gameStartCommand);
+    getCommand("gamestart").setExecutor(gameStartCommand);
   }
 }
