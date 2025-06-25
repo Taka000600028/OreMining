@@ -7,9 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.SplittableRandom;
-import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -34,8 +32,8 @@ public class GameStartCommand extends BaseCommand implements Listener {
   private Player player;
   private Main main;
   private int gameTime = 40;
-  private final HashMap<UUID, Integer> playerScores = new HashMap<>();
   private static final String LIST = "list";
+  private int currentScore = 0;
 
   public GameStartCommand(Main main) {
     this.main = main;
@@ -49,35 +47,37 @@ public class GameStartCommand extends BaseCommand implements Listener {
   @Override
   public boolean onExecutePlayerCommand(Player player, CommandSender commandSender, String s,
       String[] strings) {
+
+    this.player = player;
+    gameTime = GAME_TIME;
+    Main main = this.main;
+    currentScore = 0;
+
     if (strings.length == 1 && LIST.equals(strings[0])) {
 
-      String sql = "select * from player_score;";
+//      String sql = "select * from player_score;";
 
       try (Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/spigot_server",
           "root",
           "me73-266390j");
           Statement statement = con.createStatement();
-          ResultSet resultSet = statement.executeQuery("select * from player_score;")) {
+          ResultSet resultSet = statement.executeQuery("SELECT * FROM player_score;")) {
+
         while (resultSet.next()) {
           int id = resultSet.getInt("id");
           String name = resultSet.getString("player_name");
           int score = resultSet.getInt("score");
-
           LocalDateTime date = LocalDateTime.parse(resultSet.getString("registered_at"), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
-          player.sendMessage(id + "　|　" + name + "　|　" + date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+          player.sendMessage(id + "　|　" + name + "　|　" + score + "点　|　" + date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         }
       } catch (SQLException e) {
         throw new RuntimeException(e);
       }
 
-      return false;
+      return true;
     }
 
-    this.player = player;
-    gameTime = GAME_TIME;
-    playerScores.put(player.getUniqueId(), 0);
-    Main main = this.main;
 
     //　ゲーム開始前の装備を記録しておく。
     PlayerInventory inventory = player.getInventory();
@@ -117,10 +117,10 @@ public class GameStartCommand extends BaseCommand implements Listener {
   public void onBlockBreak(BlockBreakEvent e) {
     Material blockType = e.getBlock().getType();
     int score = getOreScore(blockType);
+
     if (score > 0) {
-      UUID playerId = e.getPlayer().getUniqueId();
-      playerScores.put(playerId, playerScores.getOrDefault(playerId, 0) + score);
-      e.getPlayer().sendMessage("§a+" + score + "点！　現在のスコア：" + playerScores.get(playerId));
+      currentScore += score;
+      e.getPlayer().sendMessage("§a+" + score + "点！　現在のスコア：" + currentScore);
     }
   }
 
@@ -246,10 +246,24 @@ public class GameStartCommand extends BaseCommand implements Listener {
           clearOreArea1(player.getWorld());
           clearOreArea2(player.getWorld());
 
-          int finalScore = playerScores.getOrDefault(player.getUniqueId(), 0);
+          int finalScore = currentScore;
           player.sendTitle("ゲームが終了しました！",
               player.getName() + "のスコアは" + finalScore + "点！",
               30, 30, 30);
+
+          try (Connection con = DriverManager.getConnection(
+              "jdbc:mysql://localhost:3306/spigot_server",
+              "root",
+              "me73-266390j");
+              Statement statement = con.createStatement()){
+
+              statement.executeUpdate(
+                  "INSERT INTO player_score(player_name, score, registered_at)"
+              + "VALUES('"+ player.getName() +"'," + finalScore + ",now());");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+          }
 
           Bukkit.getScheduler().runTaskLater(main, () -> {
             player.teleport(fromLocation);
@@ -266,12 +280,13 @@ public class GameStartCommand extends BaseCommand implements Listener {
 
           return;
         }
+
         spawnOre1(player.getWorld(), player, new SplittableRandom(), 140, 58, -49);
         spawnOre2(player.getWorld(), player, new SplittableRandom(), 168, 63, -75);
 
         timeLeft -= 50;
       }
-    }.runTaskTimer(main, 0, 20 * 50);
+    }.runTaskTimer(main, 0, 20 *50);
   }
 }
 
