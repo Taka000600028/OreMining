@@ -80,7 +80,7 @@ public class GameStartCommand extends BaseCommand implements Listener {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         for (PlayerScore playerScore : playerScoreList) {
-          LocalDateTime date = LocalDateTime.parse(playerScore.getRegisteredAt(), formatter);
+          LocalDateTime date = LocalDateTime.parse(playerScore.getRegistered_at(), formatter);
 
           player.sendMessage(playerScore.getId() + "　|　"
               + playerScore.getPlayerName() + "　|　"
@@ -88,6 +88,26 @@ public class GameStartCommand extends BaseCommand implements Listener {
               + date.format(formatter));
         }
       }
+
+//      try (Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/spigot_server",
+//          "root",
+//          "me73-266390j");
+//          Statement statement = con.createStatement();
+//          ResultSet resultSet = statement.executeQuery("SELECT * FROM player_score;")) {
+//
+//        while (resultSet.next()) {
+//          int id = resultSet.getInt("id");
+//          String name = resultSet.getString("player_name");
+//          int score = resultSet.getInt("score");
+//          LocalDateTime date = LocalDateTime.parse(resultSet.getString("registered_at"),
+//              DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+//
+//          player.sendMessage(id + "　|　" + name + "　|　" + score + "点　|　" + date.format(
+//              DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+//        }
+//      } catch (SQLException e) {
+//        throw new RuntimeException(e);
+//      }
       return true;
     }
 
