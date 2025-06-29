@@ -1,19 +1,8 @@
 package plugin.gameStart.command;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.SplittableRandom;
-import org.apache.ibatis.io.Resources;
-import org.apache.ibatis.session.SqlSession;
-import org.apache.ibatis.session.SqlSessionFactory;
-import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -26,8 +15,8 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.scheduler.BukkitRunnable;
+import plugin.gameStart.PlayerScoreData;
 import plugin.gameStart.Main;
-import plugin.gameStart.mapper.PlayerScoreMapper;
 import plugin.gameStart.mapper.data.PlayerScore;
 
 /**
@@ -37,23 +26,14 @@ import plugin.gameStart.mapper.data.PlayerScore;
 public class GameStartCommand extends BaseCommand implements Listener {
 
   public static final int GAME_TIME = 40;
-  private Player player;
-  private Main main;
+  private final Main main;
   private int gameTime = 40;
   private static final String LIST = "list";
   private int currentScore = 0;
-  private SqlSessionFactory sqlSessionFactory;
+  private final PlayerScoreData playerScoreData = new PlayerScoreData();
 
   public GameStartCommand(Main main) {
     this.main = main;
-
-    InputStream inputStream = null;
-    try {
-      inputStream = Resources.getResourceAsStream("mybatis-config.xml");
-      this.sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
   }
 
   @Override
@@ -65,29 +45,13 @@ public class GameStartCommand extends BaseCommand implements Listener {
   public boolean onExecutePlayerCommand(Player player, CommandSender commandSender, String s,
       String[] strings) {
 
-    this.player = player;
     gameTime = GAME_TIME;
     Main main = this.main;
     currentScore = 0;
 
+    // 最初の引数が「list」だったら、スコアを一覧で表示して処理を終了する。
     if (strings.length == 1 && LIST.equals(strings[0])) {
-
-//      String sql = "select * from player_score;";
-
-      try (SqlSession session = sqlSessionFactory.openSession()) {
-        PlayerScoreMapper mapper = session.getMapper(PlayerScoreMapper.class);
-        List<PlayerScore> playerScoreList = mapper.selectList();
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        for (PlayerScore playerScore : playerScoreList) {
-          LocalDateTime date = LocalDateTime.parse(playerScore.getRegisteredAt(), formatter);
-
-          player.sendMessage(playerScore.getId() + "　|　"
-              + playerScore.getPlayerName() + "　|　"
-              + playerScore.getScore() + "点　|　"
-              + date.format(formatter));
-        }
-      }
+      sendPlayerScoreList(player);
       return true;
     }
 
@@ -119,7 +83,6 @@ public class GameStartCommand extends BaseCommand implements Listener {
     return true;
   }
 
-
   @Override
   public boolean onExecuteNPCCommand(CommandSender commandSender) {
     return false;
@@ -133,6 +96,22 @@ public class GameStartCommand extends BaseCommand implements Listener {
     if (score > 0) {
       currentScore += score;
       e.getPlayer().sendMessage("§a+" + score + "点！　現在のスコア：" + currentScore);
+    }
+  }
+
+  /**
+   * 現在登録されているスコアの一覧をメッセージに送る。
+   *
+   * @param player 　プレイヤー
+   */
+  private void sendPlayerScoreList(Player player) {
+    List<PlayerScore> playerScoreList = playerScoreData.selectList();
+    for (PlayerScore playerScore : playerScoreList) {
+      player.sendMessage(playerScore.getId() + "　|　"
+          + playerScore.getPlayerName() + "　|　"
+          + playerScore.getScore() + "点　|　"
+          + playerScore.getRegisteredAt()
+          .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
     }
   }
 
@@ -177,8 +156,7 @@ public class GameStartCommand extends BaseCommand implements Listener {
   }
 
   //1のエリアに4*4*4のブロックを出現させる。
-  private static void spawnOre1(World world, Player player, SplittableRandom splittableRandom,
-      double x, double y, double z) {
+  private static void spawnOre1(World world, Player player, SplittableRandom splittableRandom) {
     for (int a = 0; a <= 3; a++) {
       for (int b = 0; b <= 3; b++) {
         for (int c = 0; c <= 3; c++) {
@@ -204,8 +182,7 @@ public class GameStartCommand extends BaseCommand implements Listener {
   }
 
   //２のエリアの4*4*4のブロックを出現させる。
-  private static void spawnOre2(World world, Player player, SplittableRandom splittableRandom,
-      double x, double y, double z) {
+  private static void spawnOre2(World world, Player player, SplittableRandom splittableRandom) {
     for (int a = 0; a <= 3; a++) {
       for (int b = 0; b <= 3; b++) {
         for (int c = 0; c <= 3; c++) {
@@ -263,20 +240,6 @@ public class GameStartCommand extends BaseCommand implements Listener {
               player.getName() + "のスコアは" + finalScore + "点！",
               30, 30, 30);
 
-          try (Connection con = DriverManager.getConnection(
-              "jdbc:mysql://localhost:3306/spigot_server",
-              "root",
-              "me73-266390j");
-              Statement statement = con.createStatement()) {
-
-            statement.executeUpdate(
-                "INSERT INTO player_score(player_name, score, registered_at)"
-                    + "VALUES('" + player.getName() + "'," + finalScore + ",now());");
-
-          } catch (SQLException e) {
-            e.printStackTrace();
-          }
-
           Bukkit.getScheduler().runTaskLater(main, () -> {
             player.teleport(fromLocation);
 
@@ -290,11 +253,14 @@ public class GameStartCommand extends BaseCommand implements Listener {
             player.sendMessage("元の位置に戻りました。");
           }, 20 * 10);
 
+          playerScoreData.insert(
+              new PlayerScore(player.getName(), finalScore));
+
           return;
         }
 
-        spawnOre1(player.getWorld(), player, new SplittableRandom(), 140, 58, -49);
-        spawnOre2(player.getWorld(), player, new SplittableRandom(), 168, 63, -75);
+        spawnOre1(player.getWorld(), player, new SplittableRandom());
+        spawnOre2(player.getWorld(), player, new SplittableRandom());
 
         timeLeft -= 50;
       }
