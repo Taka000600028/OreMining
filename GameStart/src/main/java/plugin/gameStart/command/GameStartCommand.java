@@ -1,12 +1,14 @@
 package plugin.gameStart.command;
 
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.SplittableRandom;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -15,6 +17,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.scheduler.BukkitRunnable;
+import plugin.gameStart.BlockData;
 import plugin.gameStart.PlayerScoreData;
 import plugin.gameStart.Main;
 import plugin.gameStart.mapper.data.PlayerScore;
@@ -31,6 +34,7 @@ public class GameStartCommand extends BaseCommand implements Listener {
   private static final String LIST = "list";
   private int currentScore = 0;
   private final PlayerScoreData playerScoreData = new PlayerScoreData();
+  private List<BlockData> originalAndesitesBlocks = new ArrayList<>();
 
   public GameStartCommand(Main main) {
     this.main = main;
@@ -65,11 +69,29 @@ public class GameStartCommand extends BaseCommand implements Listener {
 
     //ゲーム開始後、指定された場所に移動する。
     Location fromLocation = player.getLocation().clone();
-
     Location teleportLocation = new Location(player.getWorld(), 155, 64, -39);
     teleportLocation.setYaw(180);
     player.teleport(teleportLocation);
+
     player.sendTitle("ゲームを開始します！", "洞窟内の鉱石を採掘して下さい！", 20, 20, 20);
+
+    originalAndesitesBlocks.clear();
+    World world = player.getWorld();
+    int x1 = 130, y1 = 50, z1 = -85;
+    int x2 = 180, y2 = 80, z2 = -30;
+
+    for (int x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) {
+      for (int y = Math.min(y1, y2); y <= Math.max(y1, y2); y++) {
+        for (int z = Math.min(z1, z2); z <= Math.max(z1, z2); z++) {
+          Block block = world.getBlockAt(x, y, z);
+          Material type = block.getType();
+          if (type == Material.ANDESITE || type == Material.STONE) {
+            originalAndesitesBlocks.add(new BlockData(type, block.getLocation()));
+          }
+        }
+      }
+    }
+    player.sendMessage("BLOCKを記録しました。");
 
     //コマンドを実行の間、装備する。
     inventory.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
@@ -86,6 +108,11 @@ public class GameStartCommand extends BaseCommand implements Listener {
   @Override
   public boolean onExecuteNPCCommand(CommandSender commandSender) {
     return false;
+  }
+
+  @Override
+  public void restore() {
+
   }
 
   @EventHandler
@@ -235,10 +262,16 @@ public class GameStartCommand extends BaseCommand implements Listener {
           clearOreArea1(player.getWorld());
           clearOreArea2(player.getWorld());
 
+          for (BlockData data : originalAndesitesBlocks){
+            data.restore();
+          }
+          player.sendMessage("BLOCKを元に戻しました。");
+
           int finalScore = currentScore;
           player.sendTitle("ゲームが終了しました！",
               player.getName() + "のスコアは" + finalScore + "点！",
               30, 30, 30);
+
 
           Bukkit.getScheduler().runTaskLater(main, () -> {
             player.teleport(fromLocation);
@@ -267,4 +300,3 @@ public class GameStartCommand extends BaseCommand implements Listener {
     }.runTaskTimer(main, 0, 20 * 50);
   }
 }
-

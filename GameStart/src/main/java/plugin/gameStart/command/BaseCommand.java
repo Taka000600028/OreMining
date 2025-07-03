@@ -41,4 +41,5 @@ public abstract class BaseCommand implements CommandExecutor {
    */
   public abstract boolean onExecuteNPCCommand(CommandSender commandSender);
 
+  public abstract void restore();
 }
