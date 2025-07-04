@@ -1,17 +1,7 @@
 package plugin.gameStart;
 
-import static org.bukkit.Bukkit.getLogger;
-
-import java.util.ArrayList;
-import java.util.List;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
-import org.bukkit.block.Block;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-import plugin.gameStart.command.BaseCommand;
 
 public class BlockData {
   private final Material type;

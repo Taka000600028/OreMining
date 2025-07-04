@@ -23,7 +23,8 @@ import plugin.gameStart.Main;
 import plugin.gameStart.mapper.data.PlayerScore;
 
 /**
- * 制限時間内に出現するブロックを壊して、スコアを獲得するゲームを起動するコマンドです。 スコアはブロックの種類によって変わり、合計点数が変動します。
+ * 制限時間内に出現するブロックを壊して、スコアを獲得するゲームを起動するコマンドです。
+ * スコアはブロックの種類によって変わり、合計点数が変動します。
  * 結果はプレイヤー名、点数、日時などで保存されます。
  **/
 public class GameStartCommand extends BaseCommand implements Listener {
@@ -34,18 +35,13 @@ public class GameStartCommand extends BaseCommand implements Listener {
   private static final String LIST = "list";
   private int currentScore = 0;
   private final PlayerScoreData playerScoreData = new PlayerScoreData();
-  private List<BlockData> originalAndesitesBlocks = new ArrayList<>();
+  private final List<BlockData> originalAndesitesBlocks = new ArrayList<>();
 
   public GameStartCommand(Main main) {
     this.main = main;
   }
 
-  @Override
-  public boolean onExecutePlayerCommand(Player player) {
-    return false;
-  }
-
-  @Override
+   @Override
   public boolean onExecutePlayerCommand(Player player, CommandSender commandSender, String s,
       String[] strings) {
 
@@ -75,14 +71,15 @@ public class GameStartCommand extends BaseCommand implements Listener {
 
     player.sendTitle("ゲームを開始します！", "洞窟内の鉱石を採掘して下さい！", 20, 20, 20);
 
+    //ゲーム中に破壊した床、壁、天井のブロックを復元させるための情報を取得する。
     originalAndesitesBlocks.clear();
     World world = player.getWorld();
     int x1 = 130, y1 = 50, z1 = -85;
     int x2 = 180, y2 = 80, z2 = -30;
 
-    for (int x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) {
-      for (int y = Math.min(y1, y2); y <= Math.max(y1, y2); y++) {
-        for (int z = Math.min(z1, z2); z <= Math.max(z1, z2); z++) {
+    for (int x = x1; x <= x2; x++) {
+      for (int y = y1; y <= y2; y++) {
+        for (int z = z1; z <= z2; z++) {
           Block block = world.getBlockAt(x, y, z);
           Material type = block.getType();
           if (type == Material.ANDESITE || type == Material.STONE) {
@@ -108,11 +105,6 @@ public class GameStartCommand extends BaseCommand implements Listener {
   @Override
   public boolean onExecuteNPCCommand(CommandSender commandSender) {
     return false;
-  }
-
-  @Override
-  public void restore() {
-
   }
 
   @EventHandler
@@ -166,7 +158,6 @@ public class GameStartCommand extends BaseCommand implements Listener {
    * @return 鉱石の種類
    */
   private static Material getMaterial(int chance) {
-    Material oreType = null;
     if (chance < 1) {
       return Material.NETHER_GOLD_ORE;
     } else if (chance < 20) {
@@ -183,7 +174,7 @@ public class GameStartCommand extends BaseCommand implements Listener {
   }
 
   //1のエリアに4*4*4のブロックを出現させる。
-  private static void spawnOre1(World world, Player player, SplittableRandom splittableRandom) {
+  private static void spawnOre1(World world, SplittableRandom splittableRandom) {
     for (int a = 0; a <= 3; a++) {
       for (int b = 0; b <= 3; b++) {
         for (int c = 0; c <= 3; c++) {
@@ -209,7 +200,7 @@ public class GameStartCommand extends BaseCommand implements Listener {
   }
 
   //２のエリアの4*4*4のブロックを出現させる。
-  private static void spawnOre2(World world, Player player, SplittableRandom splittableRandom) {
+  private static void spawnOre2(World world, SplittableRandom splittableRandom) {
     for (int a = 0; a <= 3; a++) {
       for (int b = 0; b <= 3; b++) {
         for (int c = 0; c <= 3; c++) {
@@ -247,7 +238,6 @@ public class GameStartCommand extends BaseCommand implements Listener {
    * @param boots          　コマンドを実行する時に装着しているブーツ
    * @param itemInMainHand 　コマンドを実行する時に装着している武器
    */
-
   private void gamePlay(Player player, Main main, Location fromLocation, PlayerInventory inventory,
       ItemStack helmet, ItemStack chestPlate, ItemStack leggings, ItemStack boots,
       ItemStack itemInMainHand) {
@@ -262,7 +252,7 @@ public class GameStartCommand extends BaseCommand implements Listener {
           clearOreArea1(player.getWorld());
           clearOreArea2(player.getWorld());
 
-          for (BlockData data : originalAndesitesBlocks){
+          for (BlockData data : originalAndesitesBlocks) {
             data.restore();
           }
           player.sendMessage("BLOCKを元に戻しました。");
@@ -271,7 +261,6 @@ public class GameStartCommand extends BaseCommand implements Listener {
           player.sendTitle("ゲームが終了しました！",
               player.getName() + "のスコアは" + finalScore + "点！",
               30, 30, 30);
-
 
           Bukkit.getScheduler().runTaskLater(main, () -> {
             player.teleport(fromLocation);
@@ -292,8 +281,8 @@ public class GameStartCommand extends BaseCommand implements Listener {
           return;
         }
 
-        spawnOre1(player.getWorld(), player, new SplittableRandom());
-        spawnOre2(player.getWorld(), player, new SplittableRandom());
+        spawnOre1(player.getWorld(), new SplittableRandom());
+        spawnOre2(player.getWorld(), new SplittableRandom());
 
         timeLeft -= 50;
       }
