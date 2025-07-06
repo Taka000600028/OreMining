@@ -23,7 +23,8 @@ import plugin.gameStart.Main;
 import plugin.gameStart.mapper.data.PlayerScore;
 
 /**
- * 制限時間内に出現するブロックを壊して、スコアを獲得するゲームを起動するコマンドです。 スコアはブロックの種類によって変わり、合計点数が変動します。
+ * 制限時間内に出現する鉱石ブロックを壊して、スコアを獲得するゲームを起動するコマンドです。
+ * スコアは鉱石ブロックの種類によって変わり、合計点数が変動します。
  * 結果はプレイヤー名、点数、日時などで保存されます。
  */
 public class GameStartCommand extends BaseCommand implements Listener {
@@ -38,7 +39,6 @@ public class GameStartCommand extends BaseCommand implements Listener {
   public GameStartCommand(Main main) {
     this.main = main;
   }
-
 
   @Override
   public boolean onExecutePlayerCommand(Player player, CommandSender commandSender, String s,
@@ -64,7 +64,87 @@ public class GameStartCommand extends BaseCommand implements Listener {
 
     player.sendTitle("ゲームを開始します！", "洞窟内の鉱石を採掘して下さい！", 20, 20, 20);
 
-    //ゲーム中に破壊した床、壁、天井のブロックを復元させるための情報を取得する。
+    //コマンドを実行の間、ピッケルを装備する。
+    inventory.setItemInMainHand(new ItemStack(Material.NETHERITE_PICKAXE));
+
+    restorationBlock(player);
+
+    gamePlay(player, main, fromLocation, inventory,itemInMainHand);
+
+    return true;
+  }
+
+  @EventHandler
+  public void onBlockBreak(BlockBreakEvent e) {
+    blockBreak(e);
+  }
+
+  @Override
+  public boolean onExecuteNPCCommand(CommandSender commandSender) {
+    return false;
+  }
+
+  /**
+   * 現在登録されているスコアの一覧をメッセージに送る。
+   *
+   * @param player 　プレイヤー
+   */
+  private void sendPlayerScoreList(Player player) {
+    List<PlayerScore> playerScoreList = playerScoreData.selectList();
+    for (PlayerScore playerScore : playerScoreList) {
+      player.sendMessage(playerScore.getId() + "　|　"
+          + playerScore.getPlayerName() + "　|　"
+          + playerScore.getScore() + "点　|　"
+          + playerScore.getRegisteredAt()
+          .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+    }
+  }
+
+  /**
+   * 鉱石ブロックの種類に応じてスコアを設定する。
+   *
+   * @param oreType 　鉱石ブロックの種類
+   * @return 鉱石ブロックのスコア情報
+   */
+  private int getOreScore(Material oreType) {
+    return switch (oreType) {
+      case NETHER_GOLD_ORE -> 100;
+      case GOLD_ORE -> 30;
+      case DIAMOND_ORE -> 10;
+      case EMERALD_ORE -> 20;
+      case LAPIS_ORE -> 5;
+      default -> 0;
+    };
+  }
+
+  /**
+   * 鉱石ブロックの出現率を設定します。
+   *
+   * @param chance 　出現率
+   * @return 鉱石の種類
+   */
+  private static Material getMaterial(int chance) {
+    if (chance < 1) {
+      return Material.NETHER_GOLD_ORE;
+    } else if (chance < 20) {
+      return Material.GOLD_ORE;
+    } else if (chance < 30) {
+      return Material.DIAMOND_ORE;
+    } else if (chance < 40) {
+      return Material.EMERALD_ORE;
+    } else if (chance < 80) {
+      return Material.LAPIS_ORE;
+    } else {
+      return Material.STONE;
+    }
+  }
+
+  /**
+   * ゲーム開始前のステージ内のブロック情報を取得し、ゲーム終了後に破壊された床、壁、天井のブロックを復元させる。
+   *
+   * @param player　コマンドを実行したプレイヤー
+   */
+  private void restorationBlock(Player player) {
     originalAndesitesBlocks.clear();
     World world = player.getWorld();
     int x1 = 130, y1 = 50, z1 = -85;
@@ -81,17 +161,48 @@ public class GameStartCommand extends BaseCommand implements Listener {
         }
       }
     }
-    player.sendMessage("BLOCKを記録しました。");
-
-    //コマンドを実行の間、装備する。
-    inventory.setItemInMainHand(new ItemStack(Material.NETHERITE_PICKAXE));
-
-    gamePlay(player, main, fromLocation, inventory,itemInMainHand);
-    return true;
   }
 
   /**
-   * ゲームを実行します。規定時間内にブロックを壊すとスコアが加算されます。合計スコアを時間経過後に表示します。
+   * 1つ目のエリアに鉱石ブロックを出現させます。
+   *
+   * @param world　鉱石ブロックを出現させるワールド
+   * @param splittableRandom　出現する鉱石ブロックのランダム性
+   */
+  private static void spawnOre1(World world, SplittableRandom splittableRandom) {
+    for (int a = 0; a <= 3; a++) {
+      for (int b = 0; b <= 3; b++) {
+        for (int c = 0; c <= 3; c++) {
+          int chance = splittableRandom.nextInt(100);
+          Material oreType = getMaterial(chance);
+          Location oreLocation = new Location(world, 140 + a, 58 + b, -49 + c);
+          world.getBlockAt(oreLocation).setType(oreType);
+        }
+      }
+    }
+  }
+
+  /**
+   * 2つ目のエリアに鉱石ブロックを出現させます。
+   *
+   * @param world　鉱石ブロックを出現させるワールド
+   * @param splittableRandom　出現させる鉱石ブロックのランダム性
+   */
+  private static void spawnOre2(World world, SplittableRandom splittableRandom) {
+    for (int a = 0; a <= 3; a++) {
+      for (int b = 0; b <= 3; b++) {
+        for (int c = 0; c <= 3; c++) {
+          int chance = splittableRandom.nextInt(100);
+          Material oreType = getMaterial(chance);
+          Location oreLocation = new Location(world, 168 + a, 63 + b, -75 + c);
+          world.getBlockAt(oreLocation).setType(oreType);
+        }
+      }
+    }
+  }
+
+  /**
+   * ゲームを実行します。規定時間内に鉱石ブロックを壊すとスコアが加算されます。合計スコアを時間経過後に表示します。
    * 持ち物はゲームを実行すると設定された持ち物に変更されます。
    *
    * @param player         　コマンドを実行したプレイヤー
@@ -116,7 +227,6 @@ public class GameStartCommand extends BaseCommand implements Listener {
           for (BlockData data : originalAndesitesBlocks) {
             data.restore();
           }
-          player.sendMessage("BLOCKを元に戻しました。");
 
           int finalScore = currentScore;
           player.sendTitle("ゲームが終了しました！",
@@ -145,119 +255,10 @@ public class GameStartCommand extends BaseCommand implements Listener {
     }.runTaskTimer(main, 0, 20 * 50);
   }
 
-  @EventHandler
-  public void onBlockBreak(BlockBreakEvent e) {
-    Material blockType = e.getBlock().getType();
-    int score = getOreScore(blockType);
-
-    if (score > 0) {
-      currentScore += score;
-      e.getPlayer().sendMessage("§a+" + score + "点！　現在のスコア：" + currentScore);
-    }
-  }
-
-  @Override
-  public boolean onExecuteNPCCommand(CommandSender commandSender) {
-    return false;
-  }
-
   /**
-   * 現在登録されているスコアの一覧をメッセージに送る。
+   * 1つ目のエリアに出現させた鉱石ブロックを削除します。
    *
-   * @param player 　プレイヤー
-   */
-  private void sendPlayerScoreList(Player player) {
-    List<PlayerScore> playerScoreList = playerScoreData.selectList();
-    for (PlayerScore playerScore : playerScoreList) {
-      player.sendMessage(playerScore.getId() + "　|　"
-          + playerScore.getPlayerName() + "　|　"
-          + playerScore.getScore() + "点　|　"
-          + playerScore.getRegisteredAt()
-          .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-    }
-  }
-
-  /**
-   * 鉱石の種類に応じてスコアを設定する。
-   *
-   * @param oreType 　ブロックの種類
-   * @return ブロックのスコア情報
-   */
-  private int getOreScore(Material oreType) {
-    return switch (oreType) {
-      case NETHER_GOLD_ORE -> 100;
-      case GOLD_ORE -> 30;
-      case DIAMOND_ORE -> 10;
-      case EMERALD_ORE -> 20;
-      case LAPIS_ORE -> 5;
-      default -> 0;
-    };
-  }
-
-  /**
-   * 鉱石の出現率を設定します。
-   *
-   * @param chance 　出現率
-   * @return 鉱石の種類
-   */
-  private static Material getMaterial(int chance) {
-    if (chance < 1) {
-      return Material.NETHER_GOLD_ORE;
-    } else if (chance < 20) {
-      return Material.GOLD_ORE;
-    } else if (chance < 30) {
-      return Material.DIAMOND_ORE;
-    } else if (chance < 40) {
-      return Material.EMERALD_ORE;
-    } else if (chance < 80) {
-      return Material.LAPIS_ORE;
-    } else {
-      return Material.STONE;
-    }
-  }
-
-  /**
-   * 1つ目のエリアにブロックを出現させます。
-   *
-   * @param world　ブロックを出現させるワールド
-   * @param splittableRandom　出現するブロックのランダム性
-   */
-  private static void spawnOre1(World world, SplittableRandom splittableRandom) {
-    for (int a = 0; a <= 3; a++) {
-      for (int b = 0; b <= 3; b++) {
-        for (int c = 0; c <= 3; c++) {
-          int chance = splittableRandom.nextInt(100);
-          Material oreType = getMaterial(chance);
-          Location oreLocation = new Location(world, 140 + a, 58 + b, -49 + c);
-          world.getBlockAt(oreLocation).setType(oreType);
-        }
-      }
-    }
-  }
-
-  /**
-   * 2つ目のエリアにブロックを出現させます。
-   *
-   * @param world　ブロックを出現させるワールド
-   * @param splittableRandom　出現させるブロックのランダム性
-   */
-  private static void spawnOre2(World world, SplittableRandom splittableRandom) {
-    for (int a = 0; a <= 3; a++) {
-      for (int b = 0; b <= 3; b++) {
-        for (int c = 0; c <= 3; c++) {
-          int chance = splittableRandom.nextInt(100);
-          Material oreType = getMaterial(chance);
-          Location oreLocation = new Location(world, 168 + a, 63 + b, -75 + c);
-          world.getBlockAt(oreLocation).setType(oreType);
-        }
-      }
-    }
-  }
-
-  /**
-   * 1つ目のエリアに出現させたブロックを削除します。
-   *
-   * @param world　ブロックを出現させたワールド
+   * @param world　鉱石ブロックを出現させたワールド
    */
   private void clearOreArea1(World world) {
     for (int a = 0; a <= 3; a++) {
@@ -271,9 +272,9 @@ public class GameStartCommand extends BaseCommand implements Listener {
   }
 
   /**
-   * 2つ目のエリアに出現させたブロックを削除します。
+   * 2つ目のエリアに出現させた鉱石ブロックを削除します。
    *
-   * @param world　ブロックを出現させたワールド
+   * @param world　鉱石ブロックを出現させたワールド
    */
   private void clearOreArea2(World world) {
     for (int a = 0; a <= 3; a++) {
@@ -283,6 +284,20 @@ public class GameStartCommand extends BaseCommand implements Listener {
           world.getBlockAt(location).setType(Material.AIR);
         }
       }
+    }
+  }
+
+  /**
+   * 鉱石ブロックを破壊した際に、鉱石ブロックに応じたスコアを加算します。
+   *
+   * @param e　イベント
+   */
+  private void blockBreak(BlockBreakEvent e) {
+    Material blockType = e.getBlock().getType();
+    int score = getOreScore(blockType);
+    if (0 < score) {
+      currentScore += score;
+      e.getPlayer().sendMessage("§a+" + score + "点！　現在のスコア：" + currentScore);
     }
   }
 }
