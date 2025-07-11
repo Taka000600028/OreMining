@@ -1,3 +1,8 @@
+> 🌐 This document is written in English. Please disable automatic translation in your browser for accurate reading.
+> 
+> 📌 本ドキュメントは英語で記述されている箇所がございます。正しく表示するため、自動翻訳機能をオフにすることを推奨します。
+
+
 # はじめに
 - 本リポジトリはJavaエンジニア転職を目指す「たか」（Xアカウント：https://x.com/5qhRg ） が作成したMineCraftプラグイン「GameStart」に関するものです。
 - Webアプリケーション開発をするために、今まで学習してきたことをアウトプット作品として作成しました。
