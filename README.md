@@ -12,7 +12,9 @@
 - 出現割合が低いものほど高得点を獲得できます。
 
 ## プレイ動画
-[![再生ボタン](https://i9.ytimg.com/vi_webp/AoeYOAnoJts/mq1.webp?sqp=CKiH28MG-oaymwEmCMACELQB8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGFsgWyhbMA8=&rs=AOn4CLDycY7xrkJpYk9VsAae5KOI1NNvyQ)](https://youtu.be/AoeYOAnoJts)
+<a href="https://youtu.be/AoeYOAnoJts">
+<img width="320" height="180" alt="image" src="https://github.com/user-attachments/assets/4f7d2b17-e419-4ef7-87ba-4b8fdd0e5b1f" />
+</a>
 
 ## ゲームの詳細
 
