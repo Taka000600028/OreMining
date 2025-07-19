@@ -100,3 +100,5 @@ CREATE　TABLE　player_score(id int auto_increment, player_name, varchar(100), 
 - ゲーム終了の5秒前からカウントダウンを表示する。
 
 ## おわりに
+
+最後までご覧いただき、ありがとうございます。<br>今後も新しい技術のキャッチアップに努めていきます！！
