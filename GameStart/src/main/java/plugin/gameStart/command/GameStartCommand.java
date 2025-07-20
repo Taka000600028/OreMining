@@ -23,8 +23,7 @@ import plugin.gameStart.Main;
 import plugin.gameStart.mapper.data.PlayerScore;
 
 /**
- * 制限時間内に出現する鉱石ブロックを壊して、スコアを獲得するゲームを起動するコマンドです。
- * スコアは鉱石ブロックの種類によって変わり、合計点数が変動します。
+ * 制限時間内に出現する鉱石ブロックを壊して、スコアを獲得するゲームを起動するコマンドです。 スコアは鉱石ブロックの種類によって変わり、合計点数が変動します。
  * 結果はプレイヤー名、点数、日時などで保存されます。
  */
 public class GameStartCommand extends BaseCommand implements Listener {
@@ -69,7 +68,7 @@ public class GameStartCommand extends BaseCommand implements Listener {
 
     restorationBlock(player);
 
-    gamePlay(player, main, fromLocation, inventory,itemInMainHand);
+    gamePlay(player, main, fromLocation, inventory, itemInMainHand);
 
     return true;
   }
@@ -106,12 +105,12 @@ public class GameStartCommand extends BaseCommand implements Listener {
    * @param oreType 　鉱石ブロックの種類
    * @return 鉱石ブロックのスコア情報
    */
-  private int getOreScore(Material oreType) {
+  int getOreScore(Material oreType) {
     return switch (oreType) {
       case NETHER_GOLD_ORE -> 100;
-      case GOLD_ORE -> 30;
-      case DIAMOND_ORE -> 10;
-      case EMERALD_ORE -> 20;
+      case EMERALD_ORE -> 30;
+      case DIAMOND_ORE -> 20;
+      case GOLD_ORE -> 10;
       case LAPIS_ORE -> 5;
       default -> 0;
     };
@@ -127,11 +126,11 @@ public class GameStartCommand extends BaseCommand implements Listener {
     if (chance < 1) {
       return Material.NETHER_GOLD_ORE;
     } else if (chance < 20) {
-      return Material.GOLD_ORE;
+      return Material.EMERALD_ORE;
     } else if (chance < 30) {
       return Material.DIAMOND_ORE;
     } else if (chance < 40) {
-      return Material.EMERALD_ORE;
+      return Material.GOLD_ORE;
     } else if (chance < 80) {
       return Material.LAPIS_ORE;
     } else {
@@ -142,7 +141,7 @@ public class GameStartCommand extends BaseCommand implements Listener {
   /**
    * ゲーム開始前のステージ内のブロック情報を取得し、ゲーム終了後に破壊された床、壁、天井のブロックを復元させる。
    *
-   * @param player　コマンドを実行したプレイヤー
+   * @param player 　コマンドを実行したプレイヤー
    */
   private void restorationBlock(Player player) {
     originalAndesitesBlocks.clear();
@@ -166,8 +165,8 @@ public class GameStartCommand extends BaseCommand implements Listener {
   /**
    * 1つ目のエリアに鉱石ブロックを出現させます。
    *
-   * @param world　鉱石ブロックを出現させるワールド
-   * @param splittableRandom　出現する鉱石ブロックのランダム性
+   * @param world            　鉱石ブロックを出現させるワールド
+   * @param splittableRandom 　出現する鉱石ブロックのランダム性
    */
   private static void spawnOre1(World world, SplittableRandom splittableRandom) {
     for (int a = 0; a <= 3; a++) {
@@ -185,8 +184,8 @@ public class GameStartCommand extends BaseCommand implements Listener {
   /**
    * 2つ目のエリアに鉱石ブロックを出現させます。
    *
-   * @param world　鉱石ブロックを出現させるワールド
-   * @param splittableRandom　出現させる鉱石ブロックのランダム性
+   * @param world            　鉱石ブロックを出現させるワールド
+   * @param splittableRandom 　出現させる鉱石ブロックのランダム性
    */
   private static void spawnOre2(World world, SplittableRandom splittableRandom) {
     for (int a = 0; a <= 3; a++) {
@@ -202,8 +201,7 @@ public class GameStartCommand extends BaseCommand implements Listener {
   }
 
   /**
-   * ゲームを実行します。規定時間内に鉱石ブロックを壊すとスコアが加算されます。合計スコアを時間経過後に表示します。
-   * 持ち物はゲームを実行すると設定された持ち物に変更されます。
+   * ゲームを実行します。規定時間内に鉱石ブロックを壊すとスコアが加算されます。合計スコアを時間経過後に表示します。 持ち物はゲームを実行すると設定された持ち物に変更されます。
    *
    * @param player         　コマンドを実行したプレイヤー
    * @param main           　クラス名
@@ -218,7 +216,7 @@ public class GameStartCommand extends BaseCommand implements Listener {
 
       @Override
       public void run() {
-        if (timeLeft <= 20) {
+        if (timeLeft <= 10) {
           cancel();
 
           clearOreArea1(player.getWorld());
@@ -250,7 +248,7 @@ public class GameStartCommand extends BaseCommand implements Listener {
         spawnOre1(player.getWorld(), new SplittableRandom());
         spawnOre2(player.getWorld(), new SplittableRandom());
 
-        timeLeft -= 50;
+        timeLeft -= 40;
       }
     }.runTaskTimer(main, 0, 20 * 50);
   }
@@ -258,7 +256,7 @@ public class GameStartCommand extends BaseCommand implements Listener {
   /**
    * 1つ目のエリアに出現させた鉱石ブロックを削除します。
    *
-   * @param world　鉱石ブロックを出現させたワールド
+   * @param world 　鉱石ブロックを出現させたワールド
    */
   private void clearOreArea1(World world) {
     for (int a = 0; a <= 3; a++) {
@@ -274,7 +272,7 @@ public class GameStartCommand extends BaseCommand implements Listener {
   /**
    * 2つ目のエリアに出現させた鉱石ブロックを削除します。
    *
-   * @param world　鉱石ブロックを出現させたワールド
+   * @param world 　鉱石ブロックを出現させたワールド
    */
   private void clearOreArea2(World world) {
     for (int a = 0; a <= 3; a++) {
@@ -290,7 +288,7 @@ public class GameStartCommand extends BaseCommand implements Listener {
   /**
    * 鉱石ブロックを破壊した際に、鉱石ブロックに応じたスコアを加算します。
    *
-   * @param e　イベント
+   * @param e 　イベント
    */
   private void blockBreak(BlockBreakEvent e) {
     Material blockType = e.getBlock().getType();

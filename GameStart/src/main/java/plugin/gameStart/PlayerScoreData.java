@@ -18,7 +18,7 @@ public class PlayerScoreData {
   private final PlayerScoreMapper mapper;
 
   public PlayerScoreData() {
-    InputStream inputStream = null;
+    InputStream inputStream;
     try {
       inputStream = Resources.getResourceAsStream("mybatis-config.xml");
       SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
