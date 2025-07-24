@@ -1,7 +1,0 @@
-name: gameStart
-version: '1.0-SNAPSHOT'
-main: plugin.gameStart.Main
-api-version: '1.21'
-commands:
-  gameStart:
-  spawnEntityPairs:
