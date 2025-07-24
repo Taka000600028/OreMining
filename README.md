@@ -102,4 +102,4 @@ CREATE　TABLE　player_score(id int auto_increment, player_name, varchar(100), 
 
 ## おわりに
 
-最後までご覧いただき、ありがとうございます。<br>今後はDockerを学習して、実行環境で動作させるまでの時間を軽減させていきたいです。
+最後までご覧いただき、ありがとうございます。<br>今後はDockerの学習および導入をして、実行環境で動作させるまでの時間を軽減させていきたいです。
