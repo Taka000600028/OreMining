@@ -1,0 +1,10 @@
+name: Main
+version: '1.0-SNAPSHOT'
+main: plugin.OreMining.Main
+api-version: '1.21'
+commands:
+  oremining:
+    usage: /oremining
+  list:
+    usage: /list
+    description: スコア一覧を表示します
