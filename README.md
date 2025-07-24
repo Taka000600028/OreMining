@@ -12,9 +12,7 @@
 - 出現割合が低いものほど高得点を獲得できます。
 
 ## プレイ動画
-<a href="https://github.com/Taka000600028/gameStart/raw/refs/heads/main/%E9%89%B1%E7%9F%B3%E6%8E%A1%E6%8E%98%E3%82%B2%E3%83%BC%E3%83%A0.mp4">
-<img width="320" height="180" alt="image" src="https://github.com/user-attachments/assets/4f7d2b17-e419-4ef7-87ba-4b8fdd0e5b1f" />
-</a>
+![デモ](./鉱石採掘ゲーム.gif)
 
 ## ゲームの詳細
 
